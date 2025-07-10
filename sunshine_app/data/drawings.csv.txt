@@ -1,0 +1,1 @@
+drawing_id	sq_ft	price_changers	has_bonfire	has_trv	has_ethanol	file_path

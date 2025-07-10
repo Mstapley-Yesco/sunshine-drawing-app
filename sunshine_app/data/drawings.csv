@@ -1,0 +1,4 @@
+drawing_id,width,height,sq_ft,price_changers,has_bonfire,has_trv,has_ethanol,file_path,digit_size,has_nitro
+10IN 2P 4ft8in x 2ft0in NITRO,4.66667,2.0,9.33,2,False,False,False,data/drawings\10IN 2P 4ft8in x 2ft0in NITRO.pdf,"10""",True
+10IN 3P 6ft3in x 2ft3in NITRO,6.25,2.25,14.06,3,False,False,False,data/drawings\10IN 3P 6ft3in x 2ft3in NITRO.pdf,"10""",True
+10IN 3P 7ft2in x 2ft9in NITRO,7.16667,2.75,19.71,3,False,False,False,data/drawings\10IN 3P 7ft2in x 2ft9in NITRO.pdf,"10""",True
