@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import streamlit as st
-from pdf2image import convert_from_path
+import fitz  # PyMuPDF
 
 # Constants
 DRAWINGS_DIR = "data/drawings"
@@ -90,7 +90,13 @@ if submit and uploaded_file:
 
     if os.path.exists(path):
         st.warning("⚠️ A drawing with this name already exists.")
-        st.image(convert_from_path(path, first_page=1, last_page=1, size=(300, None))[0])
+        try:
+            doc = fitz.open(path)
+            page = doc.load_page(0)
+            pix = page.get_pixmap()
+            st.image(pix.tobytes("png"), caption="Existing Drawing Preview", use_container_width=True)
+        except Exception as e:
+            st.error("Preview not available.")
         st.markdown(f"**Existing file:** `{filename}`")
         if st.button("✅ Overwrite Existing"):
             with open(path, "wb") as f:
