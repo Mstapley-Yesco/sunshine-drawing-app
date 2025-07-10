@@ -5,7 +5,7 @@ import fitz  # PyMuPDF
 
 CSV_PATH = "data/drawings.csv"
 
-st.set_page_config(page_title="Sunshine Drawing Lookup", layout="wide")
+st.set_page_config(page_title="Sunshine Drawing Lookup", layout="centered")
 st.title("Sunshine Drawing Lookup")
 
 if not os.path.exists(CSV_PATH):
@@ -58,13 +58,16 @@ if st.button("Search Matches"):
     filtered["match_score"] = filtered.apply(lambda row: compute_match_score(row, sqft_val, changers), axis=1)
     results = filtered.sort_values(by="match_score").head(3)
 
-    for _, row in results.iterrows():
+    for idx, row in results.iterrows():
+        st.markdown("---")
         st.markdown(f"### {row['drawing_id']}")
         st.markdown(f"**Square Footage:** {row['sq_ft']} | **Changers:** {row['price_changers']}")
         try:
             doc = fitz.open(row["file_path"])
             page = doc.load_page(0)
-            pix = page.get_pixmap()
-            st.image(pix.tobytes("png"), use_container_width=True)
+            pix = page.get_pixmap(matrix=fitz.Matrix(0.5, 0.5))  # smaller preview
+            st.image(pix.tobytes("png"), use_container_width=False)
         except:
             st.warning("Preview not available.")
+        with open(row["file_path"], "rb") as f:
+            st.download_button("⬇ Download Drawing", f, file_name=os.path.basename(row["file_path"]), key=f"dl_{idx}")
