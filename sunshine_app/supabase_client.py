@@ -7,11 +7,11 @@ supabase = create_client(url, key)
 
 def upload_to_supabase(bucket: str, file_name: str, file_bytes: bytes) -> str:
     try:
+        # Upload with default headers, Supabase will infer content-type
         response = supabase.storage.from_(bucket).upload(
             file_name,
             file_bytes,
-            {"content-type": "application/pdf"},
-            True  # upsert flag
+            upsert=True
         )
         public_url = supabase.storage.from_(bucket).get_public_url(file_name)
         return public_url
