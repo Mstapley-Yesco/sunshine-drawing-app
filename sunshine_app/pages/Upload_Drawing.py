@@ -12,17 +12,25 @@ st.title("📤 Upload New Drawing")
 # Drag-and-drop first
 uploaded_file = st.file_uploader("Upload PDF Drawing", type="pdf")
 
-# Dimension inputs
 digit_size = st.selectbox("LED Digit Size (inches)", [
     "6", "10", "13", "16", "20", "24", "28", "32", "36", "40", "48", "61", "76", "89", "114"
 ])
-col1, col2 = st.columns(2)
-with col1:
-    width_ft = st.text_input("Width (feet)", value="0")
-    width_in = st.text_input("Width (inches)", value="0.0")
-with col2:
-    height_ft = st.text_input("Height (feet)", value="0")
-    height_in = st.text_input("Height (inches)", value="0.0")
+
+# Width side-by-side
+st.markdown("**Width**")
+width_col1, width_col2 = st.columns(2)
+with width_col1:
+    width_ft = st.text_input("Feet", value="0", key="width_ft")
+with width_col2:
+    width_in = st.text_input("Inches", value="0.0", key="width_in")
+
+# Height side-by-side
+st.markdown("**Height**")
+height_col1, height_col2 = st.columns(2)
+with height_col1:
+    height_ft = st.text_input("Feet", value="0", key="height_ft")
+with height_col2:
+    height_in = st.text_input("Inches", value="0.0", key="height_in")
 
 price_changers = st.text_input("Price Changer Count", value="0")
 has_bonfire = st.checkbox("Bonfire Panel")
