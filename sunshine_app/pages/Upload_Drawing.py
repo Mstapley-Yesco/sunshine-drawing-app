@@ -8,11 +8,12 @@ import io
 BUCKET = "drawings"
 st.set_page_config(page_title="Upload Drawing", layout="wide")
 
-# Use columns to center content
+# Wide margins using columns
 left_margin, center_col, right_margin = st.columns([1, 2, 1])
 
 with center_col:
     st.title("📤 Upload New Sunshine Drawing")
+
     uploaded_file = st.file_uploader("Upload PDF Drawing", type=["pdf"])
 
     digit_size = st.selectbox("LED Digit Size", [
@@ -44,6 +45,7 @@ with center_col:
     with col_b1:
         bonfire = st.checkbox("Bonfire Panel")
         trv = st.checkbox("Trucks & RVs Panel")
+    with col_b2:
         ethanol = st.checkbox("Ethanol-Free Panel")
         nitro = st.checkbox("Nitro Panel")
 
@@ -71,17 +73,21 @@ with center_col:
             st.error(f"Failed to generate preview: {e}")
 
         metadata = {
-            "File Name": file_name + ".pdf",
-            "Square Footage": square_footage,
-            "Digit Size": digit_size,
-            "Price Changer Count": int(changer_count),
-            "Width": width_str,
-            "Height": height_str,
-            "Bonfire Panel": bonfire,
-            "Trucks & RVs Panel": trv,
-            "Ethanol-Free Panel": ethanol,
-            "Nitro Panel": nitro,
-            "Supabase URL": supa_url
+            "file_name": f"{file_name}.pdf",
+            "square_footage": square_footage,
+            "digit_size": digit_size,
+            "changer_count": int(changer_count),
+            "width": width_str,
+            "height": height_str,
+            "bonfire": bonfire,
+            "trv": trv,
+            "ethanol": ethanol,
+            "nitro": nitro,
+            "supabase_url": supa_url
         }
-        insert_drawing_metadata(metadata)
-        st.success("✅ Drawing uploaded and saved to Supabase.")
+
+        try:
+            insert_drawing_metadata(metadata)
+            st.success("✅ Drawing uploaded and saved to Supabase.")
+        except Exception as e:
+            st.error(f"❌ Failed to insert metadata: {e}")
