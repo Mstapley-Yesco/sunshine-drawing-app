@@ -7,30 +7,28 @@ import io
 
 BUCKET = "drawings"
 st.set_page_config(page_title="Upload Drawing", layout="wide")
-st.title("📤 Upload New Sunshine Drawing")
 
 with st.container():
-    # --- Upload Section ---
+    st.title("📤 Upload New Sunshine Drawing")
+
     uploaded_file = st.file_uploader("Upload PDF Drawing", type=["pdf"])
 
-    # --- Metadata Entry ---
     digit_size = st.selectbox("LED Digit Size", [
         "6", "10", "13", "16", "20", "24", "28", "32", "36", "40", "48", "61", "76", "89", "114"
     ]) + "IN"
 
-    col1, col2 = st.columns(2)
-    with col1:
+    col_w1, col_w2 = st.columns(2)
+    with col_w1:
         width_ft = st.text_input("Width (feet)", value="0", key="width_ft")
-    with col2:
+    with col_w2:
         width_in = st.text_input("Width (inches)", value="0", key="width_in")
 
-    col3, col4 = st.columns(2)
-    with col3:
+    col_h1, col_h2 = st.columns(2)
+    with col_h1:
         height_ft = st.text_input("Height (feet)", value="0", key="height_ft")
-    with col4:
+    with col_h2:
         height_in = st.text_input("Height (inches)", value="0", key="height_in")
 
-    # Convert to float
     try:
         total_width = int(width_ft) + float(width_in) / 12
         total_height = int(height_ft) + float(height_in) / 12
@@ -40,15 +38,14 @@ with st.container():
 
     changer_count = st.text_input("Price Changer Count", value="0")
 
-    col5, col6 = st.columns(2)
-    with col5:
+    col_b1, col_b2 = st.columns(2)
+    with col_b1:
         bonfire = st.checkbox("Bonfire Panel")
         trv = st.checkbox("Trucks & RVs Panel")
-    with col6:
+    with col_b2:
         ethanol = st.checkbox("Ethanol-Free Panel")
         nitro = st.checkbox("Nitro Panel")
 
-    # --- Save File ---
     if uploaded_file and st.button("Save Drawing"):
         width_str = f"{int(width_ft)}ft{float(width_in):.3f}in"
         height_str = f"{int(height_ft)}ft{float(height_in):.3f}in"
@@ -63,7 +60,6 @@ with st.container():
         file_bytes = uploaded_file.read()
         supa_url = upload_to_supabase(BUCKET, f"{file_name}.pdf", file_bytes)
 
-        # Generate preview thumbnail
         try:
             doc = fitz.open(stream=file_bytes, filetype="pdf")
             pix = doc.load_page(0).get_pixmap(matrix=fitz.Matrix(0.2, 0.2))
@@ -73,7 +69,6 @@ with st.container():
         except Exception as e:
             st.error(f"Failed to generate preview: {e}")
 
-        # Insert metadata
         metadata = {
             "File Name": file_name + ".pdf",
             "Square Footage": square_footage,
