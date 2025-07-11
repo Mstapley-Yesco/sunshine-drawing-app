@@ -8,9 +8,11 @@ import io
 BUCKET = "drawings"
 st.set_page_config(page_title="Upload Drawing", layout="wide")
 
-with st.container():
-    st.title("📤 Upload New Sunshine Drawing")
+# Use columns to center content
+left_margin, center_col, right_margin = st.columns([1, 2, 1])
 
+with center_col:
+    st.title("📤 Upload New Sunshine Drawing")
     uploaded_file = st.file_uploader("Upload PDF Drawing", type=["pdf"])
 
     digit_size = st.selectbox("LED Digit Size", [
