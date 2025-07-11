@@ -8,10 +8,10 @@ supabase = create_client(url, key)
 def upload_to_supabase(bucket: str, file_name: str, file_bytes: bytes) -> str:
     try:
         response = supabase.storage.from_(bucket).upload(
-            path=file_name,
-            file=file_bytes,
-            file_options={"content-type": "application/pdf"},
-            upsert=True
+            file_name,
+            file_bytes,
+            {"content-type": "application/pdf"},
+            True  # upsert flag
         )
         public_url = supabase.storage.from_(bucket).get_public_url(file_name)
         return public_url
