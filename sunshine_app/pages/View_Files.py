@@ -1,5 +1,5 @@
 import streamlit as st
-from ..supabase_table_client import get_all_drawings
+from supabase_table_client import get_all_drawings
 
 st.set_page_config(page_title="View Uploaded Drawings", layout="wide")
 st.title("📁 View Uploaded Sunshine Drawings")
