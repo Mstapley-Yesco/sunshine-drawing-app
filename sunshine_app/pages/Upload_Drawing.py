@@ -39,7 +39,7 @@ has_ethanol = st.checkbox("Ethanol-Free Panel")
 has_nitro = st.checkbox("Nitro Panel")
 
 # Save entry
-if st.button("Upload to Supabase"):
+if st.button("Upload to Database"):
     if not uploaded_file:
         st.error("Please upload a file.")
         st.stop()
@@ -68,7 +68,7 @@ if st.button("Upload to Supabase"):
     supa_url = upload_to_supabase(BUCKET, f"{drawing_id}.pdf", file_bytes)
 
     if not supa_url:
-        st.error("Failed to upload to Supabase.")
+        st.error("Failed to upload.")
         st.stop()
 
     # Save metadata
