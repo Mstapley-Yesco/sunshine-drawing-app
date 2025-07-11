@@ -18,7 +18,6 @@ col3, col4 = st.columns(2)
 with col3:
     has_bonfire = st.checkbox("Bonfire Panel")
     has_trv = st.checkbox("Trucks & RV Panel")
-with col4:
     has_ethanol = st.checkbox("Ethanol-Free Panel")
     has_nitro = st.checkbox("Nitro Panel")
 
