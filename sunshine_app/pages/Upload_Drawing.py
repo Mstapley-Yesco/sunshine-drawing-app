@@ -1,97 +1,86 @@
 import streamlit as st
-import pandas as pd
-import os
+from pathlib import Path
 from supabase_client import upload_to_supabase
+from supabase_table_client import insert_drawing_metadata
+import fitz  # PyMuPDF
+import io
 
-CSV_PATH = "data/drawings.csv"
 BUCKET = "drawings"
+st.set_page_config(page_title="Upload Drawing", layout="wide")
+st.title("📤 Upload New Sunshine Drawing")
 
-st.set_page_config(page_title="Upload Drawing", layout="centered")
-st.title("📤 Upload New Drawing")
+# --- Upload Section ---
+uploaded_file = st.file_uploader("Upload PDF Drawing", type=["pdf"])
 
-# Drag-and-drop first
-uploaded_file = st.file_uploader("Upload PDF Drawing", type="pdf")
-
-digit_size = st.selectbox("LED Digit Size (inches)", [
+# --- Metadata Entry ---
+digit_size = st.selectbox("LED Digit Size", [
     "6", "10", "13", "16", "20", "24", "28", "32", "36", "40", "48", "61", "76", "89", "114"
-])
+]) + "IN"
 
-# Width side-by-side
-st.markdown("**Width**")
-width_col1, width_col2 = st.columns(2)
-with width_col1:
-    width_ft = st.text_input("Feet", value="0", key="width_ft")
-with width_col2:
-    width_in = st.text_input("Inches", value="0.0", key="width_in")
+col1, col2 = st.columns(2)
+with col1:
+    width_ft = st.text_input("Width (feet)", value="0")
+    width_in = st.text_input("Width (inches)", value="0")
+with col2:
+    height_ft = st.text_input("Height (feet)", value="0")
+    height_in = st.text_input("Height (inches)", value="0")
 
-# Height side-by-side
-st.markdown("**Height**")
-height_col1, height_col2 = st.columns(2)
-with height_col1:
-    height_ft = st.text_input("Feet", value="0", key="height_ft")
-with height_col2:
-    height_in = st.text_input("Inches", value="0.0", key="height_in")
+# Convert to float
+try:
+    total_width = int(width_ft) + float(width_in) / 12
+    total_height = int(height_ft) + float(height_in) / 12
+    square_footage = round(total_width * total_height, 2)
+except ValueError:
+    square_footage = 0.0
 
-price_changers = st.text_input("Price Changer Count", value="0")
-has_bonfire = st.checkbox("Bonfire Panel")
-has_trv = st.checkbox("Trucks & RV Panel")
-has_ethanol = st.checkbox("Ethanol-Free Panel")
-has_nitro = st.checkbox("Nitro Panel")
+changer_count = st.text_input("Price Changer Count", value="0")
 
-# Save entry
-if st.button("Upload to Database"):
-    if not uploaded_file:
-        st.error("Please upload a file.")
-        st.stop()
+col3, col4 = st.columns(2)
+with col3:
+    bonfire = st.checkbox("Bonfire Panel")
+    trv = st.checkbox("Trucks & RVs Panel")
+with col4:
+    ethanol = st.checkbox("Ethanol-Free Panel")
+    nitro = st.checkbox("Nitro Panel")
 
-    try:
-        changers = int(price_changers)
-        width_total = float(width_ft) + float(width_in) / 12
-        height_total = float(height_ft) + float(height_in) / 12
-    except:
-        st.error("Width, height, and price changer count must be numeric.")
-        st.stop()
-
-    sq_ft = round(width_total * height_total, 2)
-
+# --- Save File ---
+if uploaded_file and st.button("Save Drawing"):
+    width_str = f"{int(width_ft)}ft{float(width_in):.3f}in"
+    height_str = f"{int(height_ft)}ft{float(height_in):.3f}in"
     panels = []
-    if has_bonfire: panels.append("BON")
-    if has_trv: panels.append("TRV")
-    if has_ethanol: panels.append("ETH")
-    if has_nitro: panels.append("NITRO")
+    if bonfire: panels.append("BON")
+    if trv: panels.append("TRV")
+    if ethanol: panels.append("ETH")
+    if nitro: panels.append("NITRO")
     panel_str = "-".join(panels)
-
-    dims = f"{int(float(width_ft))}ft{int(float(width_in))}in x {int(float(height_ft))}ft{int(float(height_in))}in"
-    drawing_id = f"{digit_size}IN {changers}P {dims} {panel_str}".strip()
+    file_name = f"{digit_size} {changer_count}P {width_str} x {height_str} {panel_str}".strip()
 
     file_bytes = uploaded_file.read()
-    supa_url = upload_to_supabase(BUCKET, f"{drawing_id}.pdf", file_bytes)
+    supa_url = upload_to_supabase(BUCKET, f"{file_name}.pdf", file_bytes)
 
-    if not supa_url:
-        st.error("Failed to upload.")
-        st.stop()
+    # Generate preview thumbnail
+    try:
+        doc = fitz.open(stream=file_bytes, filetype="pdf")
+        pix = doc.load_page(0).get_pixmap(matrix=fitz.Matrix(0.2, 0.2))
+        image_bytes = io.BytesIO(pix.tobytes("png"))
+        preview_path = f"{file_name}.png"
+        upload_to_supabase(BUCKET, preview_path, image_bytes.getvalue())
+    except Exception as e:
+        st.error(f"Failed to generate preview: {e}")
 
-    # Save metadata
-    new_entry = {
-        "drawing_id": drawing_id,
-        "digit_size": int(digit_size),
-        "price_changers": changers,
-        "sq_ft": sq_ft,
-        "has_bonfire": has_bonfire,
-        "has_trv": has_trv,
-        "has_ethanol": has_ethanol,
-        "has_nitro": has_nitro,
-        "file_path": supa_url
+    # Insert metadata
+    metadata = {
+        "File Name": file_name + ".pdf",
+        "Square Footage": square_footage,
+        "Digit Size": digit_size,
+        "Price Changer Count": int(changer_count),
+        "Width": width_str,
+        "Height": height_str,
+        "Bonfire Panel": bonfire,
+        "Trucks & RVs Panel": trv,
+        "Ethanol-Free Panel": ethanol,
+        "Nitro Panel": nitro,
+        "Supabase URL": supa_url
     }
-
-    if not os.path.exists("data"):
-        os.makedirs("data")
-    if os.path.exists(CSV_PATH):
-        df = pd.read_csv(CSV_PATH)
-        df = df[df["drawing_id"] != drawing_id]  # remove duplicates
-        df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
-    else:
-        df = pd.DataFrame([new_entry])
-
-    df.to_csv(CSV_PATH, index=False)
-    st.success(f"Drawing '{drawing_id}' uploaded and saved.")
+    insert_drawing_metadata(metadata)
+    st.success("✅ Drawing uploaded and saved to Supabase.")
