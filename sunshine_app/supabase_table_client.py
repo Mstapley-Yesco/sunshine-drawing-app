@@ -1,4 +1,4 @@
-from .supabase_client import supabase
+from supabase_client import supabase
 
 def insert_drawing_metadata(metadata):
     try:
