@@ -10,6 +10,8 @@ BUCKET = "drawings"
 st.set_page_config(page_title="Upload Drawing", layout="centered")
 st.title("📤 Upload New Drawing")
 
+uploaded_file = st.file_uploader("Upload PDF Drawing", type="pdf")
+
 # Collect form inputs
 digit_size = st.selectbox("LED Digit Size (inches)", [
     "6", "10", "13", "16", "20", "24", "28", "32", "36", "40", "48", "61", "76", "89", "114"
@@ -28,10 +30,8 @@ has_trv = st.checkbox("Trucks & RV Panel")
 has_ethanol = st.checkbox("Ethanol-Free Panel")
 has_nitro = st.checkbox("Nitro Panel")
 
-uploaded_file = st.file_uploader("Upload PDF Drawing", type="pdf")
-
 # Save entry
-if st.button("Upload to Supabase"):
+if st.button("Upload"):
     if not uploaded_file:
         st.error("Please upload a file.")
         st.stop()
@@ -62,7 +62,7 @@ if st.button("Upload to Supabase"):
     supa_url = upload_to_supabase(BUCKET, f"{drawing_id}.pdf", file_bytes)
 
     if not supa_url:
-        st.error("Failed to upload to Supabase.")
+        st.error("Failed to upload.")
         st.stop()
 
     # Save metadata
