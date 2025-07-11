@@ -44,7 +44,6 @@ with center_col:
     with col_b1:
         bonfire = st.checkbox("Bonfire Panel")
         trv = st.checkbox("Trucks & RVs Panel")
-    with col_b2:
         ethanol = st.checkbox("Ethanol-Free Panel")
         nitro = st.checkbox("Nitro Panel")
 
