@@ -87,6 +87,8 @@ with center_col:
         }
 
         try:
+            print("📦 Final metadata to upload:")
+            print(metadata)
             insert_drawing_metadata(metadata)
             st.success("✅ Drawing uploaded and saved to Supabase.")
         except Exception as e:
