@@ -2,7 +2,7 @@ from supabase_client import supabase
 
 def get_all_drawings():
     try:
-        response = supabase.table("drawings").select("*").execute()
+        response = supabase.table("drawings").select("*").execute(count="exact")
         return response.data
     except Exception as e:
         print("❌ Error fetching metadata:", e)
