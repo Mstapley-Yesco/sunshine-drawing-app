@@ -36,13 +36,16 @@ else:
 
             if drawing.get("supabase_url"):
                 try:
-                    pdf_data = requests.get(drawing["supabase_url"]).content
-                    st.download_button(
-                        label="Download PDF",
-                        data=pdf_data,
-                        file_name=drawing["file_name"],
-                        mime="application/pdf",
-                        key=f"download_{drawing['file_name']}"
-                    )
+                    response = requests.get(drawing["supabase_url"])
+                    if response.status_code == 200:
+                        st.download_button(
+                            label="Download PDF",
+                            data=response.content,
+                            file_name=drawing["file_name"],
+                            mime="application/pdf",
+                            key=f"download_{drawing['file_name']}"
+                        )
+                    else:
+                        st.error(f"Failed to fetch PDF (status {response.status_code})")
                 except Exception as e:
-                    st.error(f"Failed to load PDF: {e}")
+                    st.error(f"Download error: {e}")
