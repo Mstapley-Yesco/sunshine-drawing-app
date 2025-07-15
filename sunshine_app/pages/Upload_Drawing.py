@@ -2,13 +2,17 @@ import streamlit as st
 import io
 import fitz  # PyMuPDF
 import re
-from supabase_client import upload_to_supabase
+import urllib.parse
+from supabase_client import upload_to_supabase, SUPABASE_URL
 from supabase_table_client import insert_drawing_metadata
 
 BUCKET = "drawings"
 
 def sanitize_filename(name: str) -> str:
     return re.sub(r"[\\s/]+", "_", name)
+
+def encode_url(file_name: str) -> str:
+    return f"{SUPABASE_URL}/storage/v1/object/public/{BUCKET}/{urllib.parse.quote(file_name)}"
 
 st.title("📤 Upload Drawing")
 
@@ -48,8 +52,8 @@ if uploaded_file and st.button("Upload Drawing"):
                 st.stop()
 
             # Upload PDF
-            pdf_response = upload_to_supabase(BUCKET, sanitized_file_name, file_bytes)
-            supa_url = pdf_response
+            upload_to_supabase(BUCKET, sanitized_file_name, file_bytes)
+            supa_url = encode_url(sanitized_file_name)
 
             # Generate preview
             doc = fitz.open(stream=file_bytes, filetype="pdf")
@@ -57,8 +61,8 @@ if uploaded_file and st.button("Upload Drawing"):
             image_bytes = io.BytesIO(pix.tobytes("png"))
             image_bytes.seek(0)
             preview_name = sanitized_file_name.replace(".pdf", ".png")
-            preview_response = upload_to_supabase(BUCKET, preview_name, image_bytes.read())
-            preview_url = preview_response
+            upload_to_supabase(BUCKET, preview_name, image_bytes.read())
+            preview_url = encode_url(preview_name)
 
             # Default zero-fill
             width_ft = width_ft or "0"
