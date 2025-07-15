@@ -1,63 +1,79 @@
 import streamlit as st
 import pandas as pd
-import os
+from supabase_table_client import get_all_drawings
 
-CSV_PATH = "data/drawings.csv"
+st.set_page_config(layout="wide")
+st.title("🔍 Find Closest Match")
 
-st.set_page_config(page_title="Sunshine Drawing Lookup", layout="centered")
-st.title("Sunshine Drawing Lookup")
+# Load data from Supabase
+drawings = get_all_drawings()
+if not drawings:
+    st.error("No drawing data available.")
+    st.stop()
 
-col1, col2 = st.columns(2)
-with col1:
-    allowed_sqft = st.text_input("Allowed Square Footage")
-with col2:
-    changer_count = st.text_input("Price Changer Count")
+df = pd.DataFrame(drawings)
 
-# Centered checkboxes
-col3, col4 = st.columns(2)
-with col3:
-    has_bonfire = st.checkbox("Bonfire Panel")
-    has_trv = st.checkbox("Trucks & RV Panel")
-    has_ethanol = st.checkbox("Ethanol-Free Panel")
-    has_nitro = st.checkbox("Nitro Panel")
+# Convert and clean numeric fields
+for field in ["square_footage", "changer_count"]:
+    df[field] = pd.to_numeric(df[field], errors="coerce").fillna(0)
 
-# Button to trigger match
-if st.button("Search Matches"):
-    if not allowed_sqft or not changer_count:
-        st.warning("Enter square footage and changer count to begin.")
-        st.stop()
+df["digit_size"] = df["digit_size"].str.replace("IN", "", regex=False).astype(int)
 
-    try:
-        sqft_target = float(allowed_sqft)
-        changer_target = int(changer_count)
-    except:
-        st.error("Invalid input. Please enter numeric values.")
-        st.stop()
+# User input
+st.markdown("### Search Criteria")
+digit_size = st.selectbox("Digit Size", sorted(df["digit_size"].unique()))
+changer_count = st.number_input("Changer Count", min_value=0, step=1)
+square_footage = st.number_input("Allowed Square Footage", min_value=0.0, step=0.25)
 
-    if not os.path.exists(CSV_PATH):
-        st.error("No drawing data available.")
-        st.stop()
+st.markdown("**Panels Required**")
+bonfire = st.checkbox("Bonfire Panel")
+trv = st.checkbox("Trucks & RVs Panel")
+ethanol = st.checkbox("Ethanol-Free Panel")
+nitro = st.checkbox("Nitro Panel")
 
-    df = pd.read_csv(CSV_PATH)
+if st.button("Find Closest Matches"):
+    def score(row):
+        score = 0
+        if row["digit_size"] == digit_size:
+            score += 5
+        elif abs(row["digit_size"] - digit_size) <= 3:
+            score += 3
 
-    df["score"] = (
-        abs(df["sq_ft"] - sqft_target) +
-        10 * abs(df["price_changers"] - changer_target) +
-        5 * (df["has_bonfire"] != has_bonfire) +
-        5 * (df["has_trv"] != has_trv) +
-        5 * (df["has_ethanol"] != has_ethanol) +
-        5 * (df["has_nitro"] != has_nitro)
-    )
+        if row["changer_count"] == changer_count:
+            score += 5
+        else:
+            score -= abs(row["changer_count"] - changer_count)
 
-    top_matches = df.sort_values("score").head(3)
+        if row["square_footage"] <= square_footage:
+            score += 5
+        else:
+            score -= 10
 
-    st.markdown("### Matching Drawings")
-    for idx, row in top_matches.iterrows():
+        for panel, name in [(bonfire, "bonfire"), (trv, "trv"), (ethanol, "ethanol"), (nitro, "nitro")]:
+            if panel:
+                score += 3 if row.get(name) else -5
+        return score
+
+    df["score"] = df.apply(score, axis=1)
+    top_matches = df.sort_values("score", ascending=False).head(3)
+
+    st.markdown("### Top 3 Matches")
+    for _, row in top_matches.iterrows():
         st.markdown("---")
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown(f"**Name:** {row['drawing_id']}")
-            st.markdown(f"**Size:** {row['sq_ft']} sq ft")
-            st.markdown(f"[⬇ Download]({row['file_path']})", unsafe_allow_html=True)
-        with col2:
-            st.image(row['file_path'], width=150)
+        cols = st.columns([3, 1])
+
+        with cols[0]:
+            st.markdown(f"**File Name:** {row['file_name']}")
+            st.markdown(f"**Score:** {row['score']}")
+            st.markdown(f"**Square Footage:** {row['square_footage']} sq ft")
+            st.markdown(f"**Digit Size:** {row['digit_size']}IN")
+            st.markdown(f"**Changer Count:** {row['changer_count']}")
+            st.markdown(f"**Dimensions:** {row['width']} x {row['height']}")
+            panels = []
+            for p in ["bonfire", "trv", "ethanol", "nitro"]:
+                if row.get(p): panels.append(p.upper())
+            st.markdown(f"**Panels:** {'-'.join(panels) if panels else 'None'}")
+
+        with cols[1]:
+            if row.get("preview_url"):
+                st.image(row["preview_url"], use_container_width=True)
