@@ -56,9 +56,11 @@ if uploaded_file and st.button("Upload Drawing"):
             upload_to_supabase(BUCKET, sanitized_file_name, file_bytes)
             supa_url = encode_url(sanitized_file_name)
 
-            # Generate preview
+            # Generate high-resolution preview
             doc = fitz.open(stream=file_bytes, filetype="pdf")
-            pix = doc.load_page(0).get_pixmap(matrix=fitz.Matrix(0.2, 0.2))
+            scale = 2.0
+            matrix = fitz.Matrix(scale, scale)
+            pix = doc.load_page(0).get_pixmap(matrix=matrix)
             image_bytes = io.BytesIO(pix.tobytes("png"))
             image_bytes.seek(0)
             preview_name = sanitized_file_name.replace(".pdf", ".png")
