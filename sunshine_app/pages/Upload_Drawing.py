@@ -11,29 +11,26 @@ st.title("📤 Upload Drawing")
 st.markdown("### Upload File")
 uploaded_file = st.file_uploader("Upload PDF Drawing", type=["pdf"])
 
-# 3-column layout for better margins
-colA, colB, colC = st.columns([1, 2, 1])
-with colB:
-    digit_sizes = ["6", "10", "13", "16", "20", "24", "28", "32", "36", "40", "48", "61", "76", "89", "114"]
-    digit_size = st.selectbox("LED Digit Size (in inches)", digit_sizes)
+digit_sizes = ["6", "10", "13", "16", "20", "24", "28", "32", "36", "40", "48", "61", "76", "89", "114"]
+digit_size = st.selectbox("LED Digit Size (in inches)", digit_sizes)
 
-    changer_count = st.text_input("Price Changer Count", key="changer_count")
+changer_count = st.text_input("Price Changer Count", key="changer_count")
 
-    st.markdown("**Width**")
-    col_w1, col_w2 = st.columns(2)
-    width_ft = col_w1.text_input("Feet", key="width_ft")
-    width_in = col_w2.text_input("Inches", key="width_in")
+st.markdown("**Width**")
+col_w1, col_w2 = st.columns(2)
+width_ft = col_w1.text_input("Feet", key="width_ft")
+width_in = col_w2.text_input("Inches", key="width_in")
 
-    st.markdown("**Height**")
-    col_h1, col_h2 = st.columns(2)
-    height_ft = col_h1.text_input("Feet", key="height_ft")
-    height_in = col_h2.text_input("Inches", key="height_in")
+st.markdown("**Height**")
+col_h1, col_h2 = st.columns(2)
+height_ft = col_h1.text_input("Feet", key="height_ft")
+height_in = col_h2.text_input("Inches", key="height_in")
 
-    st.markdown("**Panels**")
-    bonfire = st.checkbox("Bonfire Panel")
-    trv = st.checkbox("Trucks & RVs Panel")
-    ethanol = st.checkbox("Ethanol-Free Panel")
-    nitro = st.checkbox("Nitro Panel")
+st.markdown("**Panels**")
+bonfire = st.checkbox("Bonfire Panel")
+trv = st.checkbox("Trucks & RVs Panel")
+ethanol = st.checkbox("Ethanol-Free Panel")
+nitro = st.checkbox("Nitro Panel")
 
 if uploaded_file:
     with st.spinner("Uploading and processing..."):
