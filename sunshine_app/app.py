@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import requests
 from supabase_table_client import get_all_drawings
 
 st.set_page_config(layout="wide")
@@ -40,44 +41,54 @@ with col2:
             st.error("Please enter a valid number for square footage and price changers.")
             st.stop()
 
-        def score(row):
-            score = 0
-
-            if row["changer_count"] == changers_val:
-                score += 5
-            else:
-                score -= abs(row["changer_count"] - changers_val)
-
-            if row["square_footage"] <= sqft_val:
-                score += 5
-            else:
-                score -= 10
-
+        def filter_and_score(row):
+            panel_penalty = 0
             for panel, name in [(bonfire, "bonfire"), (trv, "trv"), (ethanol, "ethanol"), (nitro, "nitro")]:
-                if panel:
-                    score += 3 if row.get(name) else -5
-            return score
+                if panel and not row.get(name):
+                    panel_penalty += 1
+            if row["changer_count"] != changers_val:
+                return float('inf')  # skip this one
+            if row["square_footage"] > sqft_val:
+                return float('inf')
+            return panel_penalty  # lower is better
 
-        df["score"] = df.apply(score, axis=1)
-        top_matches = df.sort_values("score", ascending=False).head(3)
+        df["score"] = df.apply(filter_and_score, axis=1)
+        filtered = df[df["score"] < float("inf")].copy()
+        filtered["leftover_sqft"] = (sqft_val - filtered["square_footage"]).round(2)
+        top_matches = filtered.sort_values(by=["score", "leftover_sqft"]).head(3)
 
-        st.subheader("Top 3 Matches")
-        for _, row in top_matches.iterrows():
-            st.markdown("---")
-            cols = st.columns([3, 1])
+        if top_matches.empty:
+            st.warning("No matching drawings found.")
+        else:
+            st.subheader("Top 3 Matches")
+            for _, row in top_matches.iterrows():
+                st.markdown("---")
+                cols = st.columns([3, 1])
 
-            with cols[0]:
-                st.markdown(f"**File Name:** {row['file_name']}")
-                st.markdown(f"**Score:** {row['score']}")
-                st.markdown(f"**Square Footage:** {row['square_footage']} sq ft")
-                st.markdown(f"**Digit Size:** {row['digit_size']}")
-                st.markdown(f"**Changer Count:** {row['changer_count']}")
-                st.markdown(f"**Dimensions:** {row['width']} x {row['height']}")
-                panels = []
-                for p in ["bonfire", "trv", "ethanol", "nitro"]:
-                    if row.get(p): panels.append(p.upper())
-                st.markdown(f"**Panels:** {'-'.join(panels) if panels else 'None'}")
+                with cols[0]:
+                    st.markdown(f"**File Name:** {row['file_name']}")
+                    st.markdown(f"**Leftover Square Footage:** {row['leftover_sqft']} sq ft")
+                    panels = []
+                    for p in ["bonfire", "trv", "ethanol", "nitro"]:
+                        if row.get(p): panels.append(p.upper())
+                    st.markdown(f"**Panels:** {'-'.join(panels) if panels else 'None'}")
 
-            with cols[1]:
-                if row.get("preview_url"):
-                    st.image(row["preview_url"], use_container_width=True)
+                with cols[1]:
+                    if row.get("preview_url"):
+                        st.image(row["preview_url"], use_container_width=True)
+
+                    if row.get("supabase_url"):
+                        try:
+                            response = requests.get(row["supabase_url"])
+                            if response.status_code == 200:
+                                st.download_button(
+                                    label="Download PDF",
+                                    data=response.content,
+                                    file_name=row["file_name"],
+                                    mime="application/pdf",
+                                    key=row["file_name"]
+                                )
+                            else:
+                                st.error(f"Could not fetch PDF (status {response.status_code})")
+                        except Exception as e:
+                            st.error(f"Download error: {e}")
