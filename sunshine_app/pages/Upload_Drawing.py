@@ -32,7 +32,7 @@ trv = st.checkbox("Trucks & RVs Panel")
 ethanol = st.checkbox("Ethanol-Free Panel")
 nitro = st.checkbox("Nitro Panel")
 
-if uploaded_file:
+if uploaded_file and st.button("Upload Drawing"):
     with st.spinner("Uploading and processing..."):
         try:
             file_bytes = uploaded_file.read()
