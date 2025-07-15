@@ -47,21 +47,22 @@ with col2:
                 if panel and not row.get(name):
                     panel_penalty += 1
             if row["changer_count"] != changers_val:
-                return float('inf')  # skip this one
+                return float('inf')
             if row["square_footage"] > sqft_val:
                 return float('inf')
-            return panel_penalty  # lower is better
+            return panel_penalty
 
         df["score"] = df.apply(filter_and_score, axis=1)
         filtered = df[df["score"] < float("inf")].copy()
         filtered["leftover_sqft"] = (sqft_val - filtered["square_footage"]).round(2)
-        top_matches = filtered.sort_values(by=["score", "leftover_sqft"]).head(3)
+        top_matches = filtered.sort_values(by=["score", "leftover_sqft"], ascending=[True, True]).head(3).reset_index(drop=True)
 
         if top_matches.empty:
             st.warning("No matching drawings found.")
         else:
             st.subheader("Top 3 Matches")
-            for _, row in top_matches.iterrows():
+            for i in range(len(top_matches)):
+                row = top_matches.iloc[i]
                 st.markdown("---")
                 cols = st.columns([3, 1])
 
