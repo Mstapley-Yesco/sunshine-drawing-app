@@ -33,6 +33,8 @@ with col2:
     ethanol = st.checkbox("Ethanol-Free Panel")
     nitro = st.checkbox("Nitro Panel")
 
+    show_limit = st.number_input("How many matches to show?", min_value=1, value=5, step=1)
+
     if st.button("Find Closest Matches"):
         try:
             sqft_val = float(square_footage)
@@ -41,28 +43,34 @@ with col2:
             st.error("Please enter a valid number for square footage and price changers.")
             st.stop()
 
-        def filter_and_score(row):
+        def compute_ranking(row):
+            leftover_sqft = sqft_val - row["square_footage"]
+            if leftover_sqft < 0:
+                return None  # Exclude overage
+
+            changer_diff = abs(row["changer_count"] - changers_val)
             panel_penalty = 0
             for panel, name in [(bonfire, "bonfire"), (trv, "trv"), (ethanol, "ethanol"), (nitro, "nitro")]:
                 if panel and not row.get(name):
                     panel_penalty += 1
-            if row["changer_count"] != changers_val:
-                return float('inf')
-            if row["square_footage"] > sqft_val:
-                return float('inf')
-            return panel_penalty
 
-        df["score"] = df.apply(filter_and_score, axis=1)
-        filtered = df[df["score"] < float("inf")].copy()
-        filtered["leftover_sqft"] = (sqft_val - filtered["square_footage"]).round(2)
-        top_matches = filtered.sort_values(by=["score", "leftover_sqft"], ascending=[True, True]).head(3).reset_index(drop=True)
+            return pd.Series({
+                "leftover_sqft": round(leftover_sqft, 2),
+                "changer_diff": changer_diff,
+                "panel_penalty": panel_penalty
+            })
 
-        if top_matches.empty:
+        ranked = df.apply(compute_ranking, axis=1)
+        df = df.join(ranked)
+        df = df.dropna(subset=["leftover_sqft"])
+
+        sorted_df = df.sort_values(by=["leftover_sqft", "changer_diff", "panel_penalty"]).head(show_limit)
+
+        if sorted_df.empty:
             st.warning("No matching drawings found.")
         else:
-            st.subheader("Top 3 Matches")
-            for i in range(len(top_matches)):
-                row = top_matches.iloc[i]
+            st.subheader(f"Top {min(show_limit, len(sorted_df))} Matches")
+            for _, row in sorted_df.iterrows():
                 st.markdown("---")
                 cols = st.columns([3, 1])
 
