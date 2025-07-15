@@ -64,8 +64,8 @@ if uploaded_file and st.button("Upload Drawing"):
 
             # Calculate square footage
             try:
-                width_total = float(width_ft) + float(width_in) / 12
-                height_total = float(height_ft) + float(height_in) / 12
+                width_total = float(width_ft or 0) + float(width_in or 0) / 12
+                height_total = float(height_ft or 0) + float(height_in or 0) / 12
                 square_footage = round(width_total * height_total, 2)
             except:
                 square_footage = 0.0
