@@ -33,7 +33,8 @@ with col2:
     ethanol = st.checkbox("Ethanol-Free Panel")
     nitro = st.checkbox("Nitro Panel")
 
-    show_limit = st.number_input("How many matches to show?", min_value=1, value=5, step=1)
+    if "show_limit" not in st.session_state:
+        st.session_state.show_limit = 5
 
     if st.button("Find Closest Matches"):
         try:
@@ -64,40 +65,52 @@ with col2:
         df = df.join(ranked)
         df = df.dropna(subset=["leftover_sqft"])
 
-        sorted_df = df.sort_values(by=["leftover_sqft", "changer_diff", "panel_penalty"]).head(show_limit)
+        sorted_df = df.sort_values(by=["leftover_sqft", "changer_diff", "panel_penalty"]).reset_index(drop=True)
 
         if sorted_df.empty:
             st.warning("No matching drawings found.")
         else:
-            st.subheader(f"Top {min(show_limit, len(sorted_df))} Matches")
-            for _, row in sorted_df.iterrows():
-                st.markdown("---")
-                cols = st.columns([3, 1])
+            st.session_state.sorted_df = sorted_df
+            st.session_state.show_limit = 5
 
-                with cols[0]:
-                    st.markdown(f"**File Name:** {row['file_name']}")
-                    st.markdown(f"**Leftover Square Footage:** {row['leftover_sqft']} sq ft")
-                    panels = []
-                    for p in ["bonfire", "trv", "ethanol", "nitro"]:
-                        if row.get(p): panels.append(p.upper())
-                    st.markdown(f"**Panels:** {'-'.join(panels) if panels else 'None'}")
+    if "sorted_df" in st.session_state:
+        sorted_df = st.session_state.sorted_df
+        show_limit = st.session_state.show_limit
 
-                with cols[1]:
-                    if row.get("preview_url"):
-                        st.image(row["preview_url"], use_container_width=True)
+        st.subheader(f"Top {min(show_limit, len(sorted_df))} Matches")
+        for i in range(min(show_limit, len(sorted_df))):
+            row = sorted_df.iloc[i]
+            st.markdown("---")
+            cols = st.columns([3, 1])
 
-                    if row.get("supabase_url"):
-                        try:
-                            response = requests.get(row["supabase_url"])
-                            if response.status_code == 200:
-                                st.download_button(
-                                    label="Download PDF",
-                                    data=response.content,
-                                    file_name=row["file_name"],
-                                    mime="application/pdf",
-                                    key=row["file_name"]
-                                )
-                            else:
-                                st.error(f"Could not fetch PDF (status {response.status_code})")
-                        except Exception as e:
-                            st.error(f"Download error: {e}")
+            with cols[0]:
+                st.markdown(f"**File Name:** {row['file_name']}")
+                st.markdown(f"**Leftover Square Footage:** {row['leftover_sqft']} sq ft")
+                panels = []
+                for p in ["bonfire", "trv", "ethanol", "nitro"]:
+                    if row.get(p): panels.append(p.upper())
+                st.markdown(f"**Panels:** {'-'.join(panels) if panels else 'None'}")
+
+            with cols[1]:
+                if row.get("preview_url"):
+                    st.image(row["preview_url"], use_container_width=True)
+
+                if row.get("supabase_url"):
+                    try:
+                        response = requests.get(row["supabase_url"])
+                        if response.status_code == 200:
+                            st.download_button(
+                                label="Download PDF",
+                                data=response.content,
+                                file_name=row["file_name"],
+                                mime="application/pdf",
+                                key=row["file_name"]
+                            )
+                        else:
+                            st.error(f"Could not fetch PDF (status {response.status_code})")
+                    except Exception as e:
+                        st.error(f"Download error: {e}")
+
+        if show_limit < len(sorted_df):
+            if st.button("Show 5 more results"):
+                st.session_state.show_limit += 5
