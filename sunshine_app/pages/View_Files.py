@@ -6,11 +6,12 @@ st.set_page_config(layout="wide")
 st.title("📂 View Uploaded Drawings")
 
 drawings = get_all_drawings()
+st.write("🔍 Raw Supabase response:", drawings)
 
 if not drawings:
     st.info("No drawings found.")
 else:
-    for drawing in sorted(drawings, key=lambda x: (int(x.get("digit_size", "0").replace("IN", "")), x.get("changer_count", 0))):
+    for drawing in sorted(drawings, key=lambda x: (int(x.get("digit_size", "0IN").replace("IN", "") or 0), x.get("changer_count", 0))):
         st.markdown("---")
         cols = st.columns([3, 1])
 
@@ -34,10 +35,14 @@ else:
                 st.markdown("_No preview available_")
 
             if drawing.get("supabase_url"):
-                st.download_button(
-                    label="Download PDF",
-                    data=requests.get(drawing["supabase_url"]).content,
-                    file_name=drawing["file_name"],
-                    mime="application/pdf",
-                    key=f"download_{drawing['file_name']}"
-                )
+                try:
+                    pdf_data = requests.get(drawing["supabase_url"]).content
+                    st.download_button(
+                        label="Download PDF",
+                        data=pdf_data,
+                        file_name=drawing["file_name"],
+                        mime="application/pdf",
+                        key=f"download_{drawing['file_name']}"
+                    )
+                except Exception as e:
+                    st.error(f"Failed to load PDF: {e}")
