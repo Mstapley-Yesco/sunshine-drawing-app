@@ -1,10 +1,14 @@
 import streamlit as st
 import io
 import fitz  # PyMuPDF
+import re
 from supabase_client import upload_to_supabase
 from supabase_table_client import insert_drawing_metadata
 
 BUCKET = "drawings"
+
+def sanitize_filename(name: str) -> str:
+    return re.sub(r"[\\s/]+", "_", name)
 
 st.title("📤 Upload Drawing")
 
@@ -36,22 +40,23 @@ if uploaded_file and st.button("Upload Drawing"):
     with st.spinner("Uploading and processing..."):
         try:
             file_bytes = uploaded_file.read()
-            file_name = uploaded_file.name
+            original_file_name = uploaded_file.name
+            sanitized_file_name = sanitize_filename(original_file_name)
 
             if not file_bytes:
                 st.error("No file content found. Please re-upload your file.")
                 st.stop()
 
             # Upload PDF
-            pdf_response = upload_to_supabase(BUCKET, file_name, file_bytes)
+            pdf_response = upload_to_supabase(BUCKET, sanitized_file_name, file_bytes)
             supa_url = pdf_response
 
             # Generate preview
             doc = fitz.open(stream=file_bytes, filetype="pdf")
             pix = doc.load_page(0).get_pixmap(matrix=fitz.Matrix(0.2, 0.2))
             image_bytes = io.BytesIO(pix.tobytes("png"))
-            image_bytes.seek(0)  # reset stream position
-            preview_name = file_name.replace(".pdf", ".png")
+            image_bytes.seek(0)
+            preview_name = sanitized_file_name.replace(".pdf", ".png")
             preview_response = upload_to_supabase(BUCKET, preview_name, image_bytes.read())
             preview_url = preview_response
 
@@ -73,7 +78,7 @@ if uploaded_file and st.button("Upload Drawing"):
 
             # Metadata
             metadata = {
-                "file_name": file_name,
+                "file_name": original_file_name,
                 "square_footage": square_footage,
                 "digit_size": f"{digit_size}IN",
                 "changer_count": int(changer_count) if changer_count.isdigit() else 0,
