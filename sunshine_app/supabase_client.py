@@ -5,7 +5,7 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def upload_to_supabase(bucket, file_name, file_bytes):
+def upload_to_supabase(bucket: str, file_name: str, file_bytes: bytes) -> str | None:
     try:
         response = supabase.storage.from_(bucket).upload(
             file_name,
@@ -14,7 +14,7 @@ def upload_to_supabase(bucket, file_name, file_bytes):
         )
         if "Key" in response:
             print("✅ File uploaded successfully:", response["Key"])
-            return f"{SUPABASE_URL}/storage/v1/object/public/{bucket}/{file_name}"
+            return {"url": f"{SUPABASE_URL}/storage/v1/object/public/{bucket}/{file_name}"}
         else:
             print("❌ Upload failed:", response)
             return None
