@@ -12,7 +12,8 @@ def sanitize_filename(name: str) -> str:
     return re.sub(r"[\\s/]+", "_", name)
 
 def encode_url(file_name: str) -> str:
-    return f"{SUPABASE_URL}/storage/v1/object/public/{BUCKET}/{urllib.parse.quote(file_name)}"
+    encoded = urllib.parse.quote(file_name)
+    return f"{SUPABASE_URL}/storage/v1/object/public/{BUCKET}/{encoded}"
 
 st.title("📤 Upload Drawing")
 
