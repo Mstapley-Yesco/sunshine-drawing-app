@@ -1,40 +1,43 @@
 import streamlit as st
+import requests
 from supabase_table_client import get_all_drawings
 
-st.set_page_config(page_title="View Uploaded Drawings", layout="wide")
-st.title("📁 View Uploaded Sunshine Drawings")
+st.set_page_config(layout="wide")
+st.title("📂 View Uploaded Drawings")
 
 drawings = get_all_drawings()
 
 if not drawings:
-    st.warning("No drawings available.")
-    st.stop()
+    st.info("No drawings found.")
+else:
+    for drawing in sorted(drawings, key=lambda x: (int(x.get("digit_size", "0").replace("IN", "")), x.get("changer_count", 0))):
+        st.markdown("---")
+        cols = st.columns([3, 1])
 
-# Sort by Digit Size then Price Changer Count
-def sort_key(d):
-    return (int(d["Digit Size"].replace("IN", "")), d["Price Changer Count"])
+        with cols[0]:
+            st.markdown(f"**File Name:** {drawing.get('file_name', 'N/A')}")
+            st.markdown(f"**Square Footage:** {drawing.get('square_footage', 'N/A')} sq ft")
+            st.markdown(f"**Digit Size:** {drawing.get('digit_size', 'N/A')}")
+            st.markdown(f"**Changer Count:** {drawing.get('changer_count', 'N/A')}")
+            st.markdown(f"**Dimensions:** {drawing.get('width', 'N/A')} x {drawing.get('height', 'N/A')}")
+            panels = []
+            if drawing.get("bonfire"): panels.append("BON")
+            if drawing.get("trv"): panels.append("TRV")
+            if drawing.get("ethanol"): panels.append("ETH")
+            if drawing.get("nitro"): panels.append("NITRO")
+            st.markdown(f"**Panels:** {'-'.join(panels) if panels else 'None'}")
 
-drawings.sort(key=sort_key)
+        with cols[1]:
+            if drawing.get("preview_url"):
+                st.image(drawing["preview_url"], use_container_width=True)
+            else:
+                st.markdown("_No preview available_")
 
-for row in drawings:
-    col1, col2 = st.columns([2, 6])
-
-    with col1:
-        st.markdown(f"**File Name:** `{row['File Name']}`")
-        st.markdown(f"**Square Footage:** `{row['Square Footage']}`")
-        st.markdown(f"**Digit Size:** `{row['Digit Size']}`")
-        st.markdown(f"**Changer Count:** `{row['Price Changer Count']}`")
-        st.markdown(f"**Width:** `{row['Width']}`")
-        st.markdown(f"**Height:** `{row['Height']}`")
-        panels = []
-        if row.get("Bonfire Panel"): panels.append("BON")
-        if row.get("Trucks & RVs Panel"): panels.append("TRV")
-        if row.get("Ethanol-Free Panel"): panels.append("ETH")
-        if row.get("Nitro Panel"): panels.append("NITRO")
-        st.markdown("**Panels:** " + (", ".join(panels) if panels else "None"))
-        st.markdown(f"[⬇️ Download Drawing]({row['Supabase URL']})", unsafe_allow_html=True)
-
-    with col2:
-        preview_url = row["Supabase URL"].replace(".pdf", ".png")
-        st.image(preview_url, width=200)
-    st.markdown("---")
+            if drawing.get("supabase_url"):
+                st.download_button(
+                    label="Download PDF",
+                    data=requests.get(drawing["supabase_url"]).content,
+                    file_name=drawing["file_name"],
+                    mime="application/pdf",
+                    key=f"download_{drawing['file_name']}"
+                )
