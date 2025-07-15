@@ -86,6 +86,10 @@ if uploaded_file and st.button("Upload Drawing"):
                 "preview_url": preview_url  # ✅ this line ensures preview is stored
             }
 
+            st.write("🧪 FINAL URL CHECK")
+            st.write("📄 supa_url:", supa_url)
+            st.write("🖼 preview_url:", preview_url)
+
             insert_drawing_metadata(metadata)
             st.success("✅ Upload complete and metadata saved.")
             if preview_url:
