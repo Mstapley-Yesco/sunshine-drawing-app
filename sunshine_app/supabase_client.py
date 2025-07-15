@@ -20,12 +20,17 @@ def upload_to_supabase(bucket, file_name, file_bytes):
             headers
         )
 
+        print("📤 Raw upload response:", response)
+
+        # Supabase-py returns a dict-like object. If "Key" is not present, we still return the constructed URL.
         if isinstance(response, dict) and "Key" in response:
             print("✅ File uploaded successfully:", response["Key"])
-            return f"{SUPABASE_URL}/storage/v1/object/public/{bucket}/{file_name}"
         else:
-            print("❌ Upload failed:", response)
-            return None
+            print("⚠️ Upload may have succeeded but did not return a 'Key':", response)
+
+        public_url = f"{SUPABASE_URL}/storage/v1/object/public/{bucket}/{file_name}"
+        print("🔗 Constructed public URL:", public_url)
+        return public_url
 
     except Exception as e:
         print("❌ Exception during upload:", e)
