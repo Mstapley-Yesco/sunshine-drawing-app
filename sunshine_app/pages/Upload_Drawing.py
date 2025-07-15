@@ -44,7 +44,7 @@ if uploaded_file and st.button("Upload Drawing"):
 
             # Upload PDF
             pdf_response = upload_to_supabase(BUCKET, file_name, file_bytes)
-            supa_url = getattr(pdf_response, "url", None)
+            supa_url = pdf_response
 
             # Generate preview
             doc = fitz.open(stream=file_bytes, filetype="pdf")
@@ -52,7 +52,7 @@ if uploaded_file and st.button("Upload Drawing"):
             image_bytes = io.BytesIO(pix.tobytes("png"))
             preview_name = file_name.replace(".pdf", ".png")
             preview_response = upload_to_supabase(BUCKET, preview_name, image_bytes.getvalue())
-            preview_url = getattr(preview_response, "url", None)
+            preview_url = preview_response
 
             # Default zero-fill
             width_ft = width_ft or "0"
