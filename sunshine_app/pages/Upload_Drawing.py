@@ -9,6 +9,33 @@ BUCKET = "drawings"
 st.title("📤 Upload Drawing")
 
 uploaded_file = st.file_uploader("Upload PDF Drawing", type=["pdf"])
+
+# Digit size dropdown
+digit_sizes = ["6", "10", "13", "16", "20", "24", "28", "32", "36", "40", "48", "61", "76", "89", "114"]
+digit_size = st.selectbox("LED Digit Size (in inches)", digit_sizes)
+
+# Price changer count
+changer_count = st.number_input("Price Changer Count", min_value=0, step=1)
+
+# Width inputs
+st.markdown("**Width**")
+col1, col2 = st.columns(2)
+width_ft = col1.number_input("Feet", min_value=0, step=1, key="width_ft")
+width_in = col2.number_input("Inches", min_value=0.0, step=0.001, format="%.3f", key="width_in")
+
+# Height inputs
+st.markdown("**Height**")
+col3, col4 = st.columns(2)
+height_ft = col3.number_input("Feet", min_value=0, step=1, key="height_ft")
+height_in = col4.number_input("Inches", min_value=0.0, step=0.001, format="%.3f", key="height_in")
+
+# Panel options
+st.markdown("**Panels**")
+bonfire = st.checkbox("Bonfire Panel")
+trv = st.checkbox("Trucks & RVs Panel")
+ethanol = st.checkbox("Ethanol-Free Panel")
+nitro = st.checkbox("Nitro Panel")
+
 if uploaded_file:
     with st.spinner("Uploading and processing..."):
         try:
@@ -26,18 +53,23 @@ if uploaded_file:
             preview_name = file_name.replace(".pdf", ".png")
             preview_url = upload_to_supabase(BUCKET, preview_name, image_bytes.getvalue())
 
-            # Sample metadata (replace with actual form input values in your app)
+            # Construct dimensions and square footage
+            width_str = f"{width_ft}ft{width_in:.3f}in"
+            height_str = f"{height_ft}ft{height_in:.3f}in"
+            square_footage = round((width_ft + width_in / 12) * (height_ft + height_in / 12), 2)
+
+            # Metadata dictionary
             metadata = {
                 "file_name": file_name,
-                "square_footage": 100.0,
-                "digit_size": "10IN",
-                "changer_count": 3,
-                "width": "4ft0in",
-                "height": "6ft0in",
-                "bonfire": True,
-                "trv": False,
-                "ethanol": False,
-                "nitro": True,
+                "square_footage": square_footage,
+                "digit_size": f"{digit_size}IN",
+                "changer_count": changer_count,
+                "width": width_str,
+                "height": height_str,
+                "bonfire": bonfire,
+                "trv": trv,
+                "ethanol": ethanol,
+                "nitro": nitro,
                 "supabase_url": supa_url,
                 "preview_url": preview_url
             }
