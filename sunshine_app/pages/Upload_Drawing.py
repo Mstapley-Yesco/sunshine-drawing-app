@@ -1,6 +1,6 @@
 import streamlit as st
 import io
-import fitz  # PyMuPDF
+import fitz  # pymupdf
 from supabase_client import upload_to_supabase
 from supabase_table_client import insert_drawing_metadata
 
