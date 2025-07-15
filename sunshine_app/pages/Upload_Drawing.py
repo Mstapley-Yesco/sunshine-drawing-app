@@ -35,8 +35,8 @@ nitro = st.checkbox("Nitro Panel")
 if uploaded_file and st.button("Upload Drawing"):
     with st.spinner("Uploading and processing..."):
         try:
-            file_bytes = uploaded_file.read() if uploaded_file else None
-            file_name = uploaded_file.name if uploaded_file else "unnamed.pdf"
+            file_bytes = uploaded_file.read()
+            file_name = uploaded_file.name
 
             if not file_bytes:
                 st.error("No file content found. Please re-upload your file.")
@@ -54,17 +54,15 @@ if uploaded_file and st.button("Upload Drawing"):
             preview_response = upload_to_supabase(BUCKET, preview_name, image_bytes.getvalue())
             preview_url = getattr(preview_response, "url", None)
 
-            # Default zero-fill values
+            # Default zero-fill
             width_ft = width_ft or "0"
             width_in = width_in or "0"
             height_ft = height_ft or "0"
             height_in = height_in or "0"
 
-            # Format dimensions
+            # Format and calculate
             width_str = f"{width_ft}ft{width_in}in"
             height_str = f"{height_ft}ft{height_in}in"
-
-            # Calculate square footage
             try:
                 width_total = float(width_ft or 0) + float(width_in or 0) / 12
                 height_total = float(height_ft or 0) + float(height_in or 0) / 12
@@ -72,6 +70,7 @@ if uploaded_file and st.button("Upload Drawing"):
             except:
                 square_footage = 0.0
 
+            # Metadata
             metadata = {
                 "file_name": file_name,
                 "square_footage": square_footage,
@@ -84,7 +83,7 @@ if uploaded_file and st.button("Upload Drawing"):
                 "ethanol": ethanol,
                 "nitro": nitro,
                 "supabase_url": supa_url,
-                "preview_url": preview_url
+                "preview_url": preview_url  # ✅ this line ensures preview is stored
             }
 
             insert_drawing_metadata(metadata)
