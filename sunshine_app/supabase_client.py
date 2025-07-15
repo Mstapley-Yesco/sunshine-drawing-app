@@ -1,4 +1,3 @@
-
 from supabase import create_client
 
 SUPABASE_URL = "https://jjlptduwuthgvetuqsyc.supabase.co"
@@ -21,7 +20,7 @@ def upload_to_supabase(bucket, file_name, file_bytes):
             headers
         )
 
-        if "Key" in response:
+        if isinstance(response, dict) and "Key" in response:
             print("✅ File uploaded successfully:", response["Key"])
             return f"{SUPABASE_URL}/storage/v1/object/public/{bucket}/{file_name}"
         else:
