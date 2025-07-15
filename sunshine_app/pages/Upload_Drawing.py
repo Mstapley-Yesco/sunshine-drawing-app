@@ -43,14 +43,16 @@ if uploaded_file and st.button("Upload Drawing"):
                 st.stop()
 
             # Upload PDF
-            supa_url = upload_to_supabase(BUCKET, file_name, file_bytes)
+            pdf_response = upload_to_supabase(BUCKET, file_name, file_bytes)
+            supa_url = getattr(pdf_response, "url", None)
 
             # Generate preview
             doc = fitz.open(stream=file_bytes, filetype="pdf")
             pix = doc.load_page(0).get_pixmap(matrix=fitz.Matrix(0.2, 0.2))
             image_bytes = io.BytesIO(pix.tobytes("png"))
             preview_name = file_name.replace(".pdf", ".png")
-            preview_url = upload_to_supabase(BUCKET, preview_name, image_bytes.getvalue())
+            preview_response = upload_to_supabase(BUCKET, preview_name, image_bytes.getvalue())
+            preview_url = getattr(preview_response, "url", None)
 
             # Default zero-fill values
             width_ft = width_ft or "0"
@@ -87,7 +89,8 @@ if uploaded_file and st.button("Upload Drawing"):
 
             insert_drawing_metadata(metadata)
             st.success("✅ Upload complete and metadata saved.")
-            st.image(preview_url, caption="Preview Image", use_container_width=True)
+            if preview_url:
+                st.image(preview_url, caption="Preview Image", use_container_width=True)
 
         except Exception as e:
             st.error(f"❌ Upload failed: {e}")
