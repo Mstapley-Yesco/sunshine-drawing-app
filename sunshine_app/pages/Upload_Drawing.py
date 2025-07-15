@@ -50,8 +50,9 @@ if uploaded_file and st.button("Upload Drawing"):
             doc = fitz.open(stream=file_bytes, filetype="pdf")
             pix = doc.load_page(0).get_pixmap(matrix=fitz.Matrix(0.2, 0.2))
             image_bytes = io.BytesIO(pix.tobytes("png"))
+            image_bytes.seek(0)  # reset stream position
             preview_name = file_name.replace(".pdf", ".png")
-            preview_response = upload_to_supabase(BUCKET, preview_name, image_bytes.getvalue())
+            preview_response = upload_to_supabase(BUCKET, preview_name, image_bytes.read())
             preview_url = preview_response
 
             # Default zero-fill
@@ -83,12 +84,8 @@ if uploaded_file and st.button("Upload Drawing"):
                 "ethanol": ethanol,
                 "nitro": nitro,
                 "supabase_url": supa_url,
-                "preview_url": preview_url  # ✅ this line ensures preview is stored
+                "preview_url": preview_url
             }
-
-            st.write("🧪 FINAL URL CHECK")
-            st.write("📄 supa_url:", supa_url)
-            st.write("🖼 preview_url:", preview_url)
 
             insert_drawing_metadata(metadata)
             st.success("✅ Upload complete and metadata saved.")
