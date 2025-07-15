@@ -19,12 +19,12 @@ changer_count = st.text_input("Price Changer Count", key="changer_count")
 st.markdown("**Width**")
 col_w1, col_w2 = st.columns(2)
 width_ft = col_w1.text_input("Feet", key="width_ft")
-width_in = col_w2.text_input("Inches", key="width_in")
+width_in = col_w2.text_input("Inches (e.g. 6.125)", key="width_in")
 
 st.markdown("**Height**")
 col_h1, col_h2 = st.columns(2)
 height_ft = col_h1.text_input("Feet", key="height_ft")
-height_in = col_h2.text_input("Inches", key="height_in")
+height_in = col_h2.text_input("Inches (e.g. 6.125)", key="height_in")
 
 st.markdown("**Panels**")
 bonfire = st.checkbox("Bonfire Panel")
@@ -35,8 +35,12 @@ nitro = st.checkbox("Nitro Panel")
 if uploaded_file and st.button("Upload Drawing"):
     with st.spinner("Uploading and processing..."):
         try:
-            file_bytes = uploaded_file.read()
-            file_name = uploaded_file.name
+            file_bytes = uploaded_file.read() if uploaded_file else None
+            file_name = uploaded_file.name if uploaded_file else "unnamed.pdf"
+
+            if not file_bytes:
+                st.error("No file content found. Please re-upload your file.")
+                st.stop()
 
             # Upload PDF
             supa_url = upload_to_supabase(BUCKET, file_name, file_bytes)
@@ -47,6 +51,12 @@ if uploaded_file and st.button("Upload Drawing"):
             image_bytes = io.BytesIO(pix.tobytes("png"))
             preview_name = file_name.replace(".pdf", ".png")
             preview_url = upload_to_supabase(BUCKET, preview_name, image_bytes.getvalue())
+
+            # Default zero-fill values
+            width_ft = width_ft or "0"
+            width_in = width_in or "0"
+            height_ft = height_ft or "0"
+            height_in = height_in or "0"
 
             # Format dimensions
             width_str = f"{width_ft}ft{width_in}in"
