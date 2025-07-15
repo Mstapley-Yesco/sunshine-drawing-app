@@ -11,8 +11,6 @@ st.title("📤 Upload Drawing")
 st.markdown("### Upload File")
 uploaded_file = st.file_uploader("Upload PDF Drawing", type=["pdf"])
 
-st.write("🖼️ Preview upload result:", preview_response)
-
 digit_sizes = ["6", "10", "13", "16", "20", "24", "28", "32", "36", "40", "48", "61", "76", "89", "114"]
 digit_size = st.selectbox("LED Digit Size (in inches)", digit_sizes)
 
