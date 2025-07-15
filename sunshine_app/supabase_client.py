@@ -10,7 +10,14 @@ def upload_to_supabase(bucket: str, file_name: str, file_bytes: bytes) -> str | 
         response = supabase.storage.from_(bucket).upload(
             file_name,
             file_bytes,
-            {"content-type": "application/pdf", "x-upsert": "true"}
+            headers = {     "x-upsert": "true" }  
+            if file_name.endswith(".pdf"):     
+                headers["content-type"] = "application/pdf" elif file_name.endswith(".png"):     
+                headers["content-type"] = "image/png"  
+            response = supabase.storage.from_(bucket).upload(     
+                file_name,     
+                file_bytes,     
+                headers )
         )
         if "Key" in response:
             print("✅ File uploaded successfully:", response["Key"])
