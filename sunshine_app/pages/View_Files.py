@@ -6,7 +6,6 @@ st.set_page_config(layout="wide")
 st.title("📂 View Uploaded Drawings")
 
 drawings = get_all_drawings()
-st.write("🔍 Raw Supabase response:", drawings)
 
 if not drawings:
     st.info("No drawings found.")
