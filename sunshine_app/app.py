@@ -32,6 +32,8 @@ with col2:
 
     if "show_limit" not in st.session_state:
         st.session_state.show_limit = 5
+    if "sorted_df" not in st.session_state:
+        st.session_state.sorted_df = pd.DataFrame()
 
     if st.button("Find Closest Matches"):
         try:
@@ -69,10 +71,10 @@ with col2:
         st.session_state.sorted_df = sorted_df
         st.session_state.show_limit = 5
 
-    if "sorted_df" in st.session_state:
-        sorted_df = st.session_state.sorted_df
-        show_limit = st.session_state.show_limit
+    sorted_df = st.session_state.sorted_df
+    show_limit = st.session_state.show_limit
 
+    if not sorted_df.empty:
         st.subheader(f"Top {min(show_limit, len(sorted_df))} Matches")
         for i in range(min(show_limit, len(sorted_df))):
             row = sorted_df.iloc[i]
@@ -87,7 +89,6 @@ with col2:
                     st.markdown(title)
 
                 st.markdown(f"**Leftover Square Footage:** {row['leftover_sqft']} sq ft")
-                st.markdown(f"**Match Score:** {row['score']}")
                 panels = [p.upper() for p in ["bonfire", "trv", "ethanol", "nitro"] if row.get(p)]
                 st.markdown(f"**Panels:** {'-'.join(panels) if panels else 'None'}")
 
@@ -114,3 +115,4 @@ with col2:
         if show_limit < len(sorted_df):
             if st.button("Show 5 more results"):
                 st.session_state.show_limit += 5
+                st.experimental_rerun()
