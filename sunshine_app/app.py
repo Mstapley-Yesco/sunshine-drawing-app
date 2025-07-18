@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import requests
-from PIL import Image
-from io import BytesIO
 from supabase_table_client import get_all_drawings
 
 st.set_page_config(layout="wide")
@@ -13,40 +11,11 @@ with col2:
     st.title("Sunshine Drawing Lookup")
 
     @st.cache_data
-    def load_drawings():
-        return get_all_drawings()
-
-    drawings = load_drawings()
-    if not drawings:
-        st.error("No drawing data available.")
-        st.stop()
-
-    df = pd.DataFrame(drawings)
-    for field in ["square_footage", "changer_count"]:
-        df[field] = pd.to_numeric(df[field], errors="coerce").fillna(0)
-
-    st.subheader("Search Criteria")
-    square_footage = st.text_input("Allowed Square Footage")
-    changer_count = st.text_input("Price Changers")
-
-    st.markdown("**Panels Required**")
-    bonfire = st.checkbox("Bonfire Panel")
-    trv = st.checkbox("Trucks & RVs Panel")
-    ethanol = st.checkbox("Ethanol-Free Panel")
-    nitro = st.checkbox("Nitro Panel")
-
-    if "page" not in st.session_state:
-        st.session_state.page = 0
-    if "sorted_df" not in st.session_state:
-        st.session_state.sorted_df = pd.DataFrame()
-
-    if st.button("Find Closest Matches"):
-        try:
-            sqft_val = float(square_footage)
-            changers_val = int(changer_count)
-        except ValueError:
-            st.error("Please enter valid numbers.")
-            st.stop()
+    def load_and_rank_drawings(sqft_val, changers_val, bonfire, trv, ethanol, nitro):
+        drawings = get_all_drawings()
+        df = pd.DataFrame(drawings)
+        for field in ["square_footage", "changer_count"]:
+            df[field] = pd.to_numeric(df[field], errors="coerce").fillna(0)
 
         def compute_ranking(row):
             leftover_sqft = sqft_val - row["square_footage"]
@@ -71,8 +40,32 @@ with col2:
         ranked = df.apply(compute_ranking, axis=1)
         df = df.join(ranked)
         df = df.dropna(subset=["score"])
-        sorted_df = df.sort_values(by="score").reset_index(drop=True)
+        return df.sort_values(by="score").reset_index(drop=True)
 
+    st.subheader("Search Criteria")
+    square_footage = st.text_input("Allowed Square Footage")
+    changer_count = st.text_input("Price Changers")
+
+    st.markdown("**Panels Required**")
+    bonfire = st.checkbox("Bonfire Panel")
+    trv = st.checkbox("Trucks & RVs Panel")
+    ethanol = st.checkbox("Ethanol-Free Panel")
+    nitro = st.checkbox("Nitro Panel")
+
+    if "page" not in st.session_state:
+        st.session_state.page = 0
+    if "sorted_df" not in st.session_state:
+        st.session_state.sorted_df = pd.DataFrame()
+
+    if st.button("Find Closest Matches"):
+        try:
+            sqft_val = float(square_footage)
+            changers_val = int(changer_count)
+        except ValueError:
+            st.error("Please enter valid numbers.")
+            st.stop()
+
+        sorted_df = load_and_rank_drawings(sqft_val, changers_val, bonfire, trv, ethanol, nitro)
         st.session_state.sorted_df = sorted_df
         st.session_state.page = 0
 
@@ -98,10 +91,7 @@ with col2:
             with cols[1]:
                 if row.get("preview_url"):
                     try:
-                        thumb = requests.get(row["preview_url"])
-                        img = Image.open(BytesIO(thumb.content))
-                        small_img = img.resize((img.width // 3, img.height // 3))
-                        st.image(small_img, use_container_width=True)
+                        st.image(row["preview_url"], width=250)
                     except Exception:
                         st.text("Image preview failed.")
 
