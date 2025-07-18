@@ -11,15 +11,12 @@ col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     st.title("Sunshine Drawing Lookup")
 
-    # Load data from Supabase
     drawings = get_all_drawings()
     if not drawings:
         st.error("No drawing data available.")
         st.stop()
 
     df = pd.DataFrame(drawings)
-
-    # Ensure numeric fields are valid
     for field in ["square_footage", "changer_count"]:
         df[field] = pd.to_numeric(df[field], errors="coerce").fillna(0)
 
@@ -47,7 +44,7 @@ with col2:
         def compute_ranking(row):
             leftover_sqft = sqft_val - row["square_footage"]
             if leftover_sqft < 0:
-                return None  # Exclude overage
+                return None
 
             changer_diff = abs(row["changer_count"] - changers_val)
             panel_penalty = 0
@@ -55,23 +52,22 @@ with col2:
                 if panel and not row.get(name):
                     panel_penalty += 1
 
+            score = leftover_sqft * 1.5 + changer_diff * 5 + panel_penalty * 2
+
             return pd.Series({
                 "leftover_sqft": round(leftover_sqft, 2),
                 "changer_diff": changer_diff,
-                "panel_penalty": panel_penalty
+                "panel_penalty": panel_penalty,
+                "score": round(score, 2)
             })
 
         ranked = df.apply(compute_ranking, axis=1)
         df = df.join(ranked)
-        df = df.dropna(subset=["leftover_sqft"])
+        df = df.dropna(subset=["score"])
+        sorted_df = df.sort_values(by="score").reset_index(drop=True)
 
-        sorted_df = df.sort_values(by=["leftover_sqft", "changer_diff", "panel_penalty"]).reset_index(drop=True)
-
-        if sorted_df.empty:
-            st.warning("No matching drawings found.")
-        else:
-            st.session_state.sorted_df = sorted_df
-            st.session_state.show_limit = 5
+        st.session_state.sorted_df = sorted_df
+        st.session_state.show_limit = 5
 
     if "sorted_df" in st.session_state:
         sorted_df = st.session_state.sorted_df
@@ -84,11 +80,15 @@ with col2:
             cols = st.columns([3, 1])
 
             with cols[0]:
-                st.markdown(f"**File Name:** {row['file_name']}")
+                title = f"**File Name:** {row['file_name']}"
+                if row["leftover_sqft"] == 0 and row["changer_diff"] == 0 and row["panel_penalty"] == 0:
+                    st.markdown(f"{title} ✅")
+                else:
+                    st.markdown(title)
+
                 st.markdown(f"**Leftover Square Footage:** {row['leftover_sqft']} sq ft")
-                panels = []
-                for p in ["bonfire", "trv", "ethanol", "nitro"]:
-                    if row.get(p): panels.append(p.upper())
+                st.markdown(f"**Match Score:** {row['score']}")
+                panels = [p.upper() for p in ["bonfire", "trv", "ethanol", "nitro"] if row.get(p)]
                 st.markdown(f"**Panels:** {'-'.join(panels) if panels else 'None'}")
 
             with cols[1]:
