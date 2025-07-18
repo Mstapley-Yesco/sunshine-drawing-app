@@ -100,14 +100,10 @@ with col2:
                     try:
                         thumb = requests.get(row["preview_url"])
                         img = Image.open(BytesIO(thumb.content))
-                        small_img = img.resize((img.width // 2, img.height // 2))
+                        small_img = img.resize((img.width // 3, img.height // 3))
                         st.image(small_img, use_container_width=True)
                     except Exception:
                         st.text("Image preview failed.")
-
-                with st.expander("Show Full Preview"):
-                    if row.get("preview_url"):
-                        st.image(row["preview_url"], use_container_width=True)
 
                 if row.get("supabase_url"):
                     try:
@@ -124,6 +120,8 @@ with col2:
                             st.error(f"Could not fetch PDF (status {response.status_code})")
                     except Exception as e:
                         st.error(f"Download error: {e}")
+
+            st.markdown("---")
 
         nav_cols = st.columns(2)
         if page > 0:
