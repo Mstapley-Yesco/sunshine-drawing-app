@@ -115,4 +115,4 @@ with col2:
         if show_limit < len(sorted_df):
             if st.button("Show 5 more results"):
                 st.session_state.show_limit += 5
-                st.experimental_rerun()
+                st.rerun()
