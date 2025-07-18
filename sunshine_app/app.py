@@ -1,17 +1,17 @@
 import streamlit as st
 import pandas as pd
 import requests
+from PIL import Image
+from io import BytesIO
 from supabase_table_client import get_all_drawings
 
 st.set_page_config(layout="wide")
 
-# Layout for margin consistency
 col1, col2, col3 = st.columns([1, 2, 1])
 
 with col2:
     st.title("Sunshine Drawing Lookup")
 
-    # Cache the drawing fetch to avoid reload lag
     @st.cache_data
     def load_drawings():
         return get_all_drawings()
@@ -86,13 +86,26 @@ with col2:
     if not matches.empty:
         st.subheader(f"Matches {start + 1}–{min(end, len(sorted_df))} of {len(sorted_df)}")
         for _, row in matches.iterrows():
-            with st.expander(f"{row['file_name']} — {row['leftover_sqft']} sq ft left"):
+            cols = st.columns([3, 1])
+            with cols[0]:
+                st.markdown(f"**File Name:** {row['file_name']}")
+                st.markdown(f"**Leftover Square Footage:** {row['leftover_sqft']} sq ft")
                 panels = [p.upper() for p in ["bonfire", "trv", "ethanol", "nitro"] if row.get(p)]
                 st.markdown(f"**Panels:** {'-'.join(panels) if panels else 'None'}")
                 st.markdown(f"**Changer Count:** {row['changer_count']}")
                 st.markdown(f"**Dimensions:** {row['width']} x {row['height']}")
 
-                if st.button(f"Show Preview for {row['file_name']}", key=row["file_name"] + "_preview"):
+            with cols[1]:
+                if row.get("preview_url"):
+                    try:
+                        thumb = requests.get(row["preview_url"])
+                        img = Image.open(BytesIO(thumb.content))
+                        small_img = img.resize((img.width // 2, img.height // 2))
+                        st.image(small_img, use_container_width=True)
+                    except Exception:
+                        st.text("Image preview failed.")
+
+                with st.expander("Show Full Preview"):
                     if row.get("preview_url"):
                         st.image(row["preview_url"], use_container_width=True)
 
@@ -112,7 +125,6 @@ with col2:
                     except Exception as e:
                         st.error(f"Download error: {e}")
 
-        # Navigation buttons
         nav_cols = st.columns(2)
         if page > 0:
             if nav_cols[0].button("Previous Page"):
